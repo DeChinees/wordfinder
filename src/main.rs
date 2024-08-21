@@ -6,6 +6,8 @@ use std::io::{self, Write};
 
 fn main() {
     let mut word_vec: Vec<String> = Vec::new(); // Initialize an empty Vec<String>
+    let mut include_chars: Option<String> = None;
+    let mut exclude_chars: Option<String> = None;
     commands::reset_words(&mut word_vec);
 
     loop {
@@ -27,21 +29,31 @@ fn main() {
             }
             Some("find") => {
                 if let Some(word) = argument {
-                    commands::find(&word_vec, word);
+                    // Capture the result of the `find` function
+                    let filtered_words = commands::find(word, include_chars.clone(), exclude_chars.clone(), &mut word_vec);
+
+                    // Print or use the filtered words
+                    if filtered_words.is_empty() {
+                        println!("No words found matching the criteria.");
+                    } else {
+                        println!("Found words: {:?}", filtered_words);
+                    }
                 } else {
                     println!("Usage: find <word>");
                 }
             }
             Some("include") => {
                 if let Some(word) = argument {
-                    commands::include(&mut word_vec, word);
+                    include_chars = Some(word.to_owned());
+                    // commands::include(&mut word_vec, word);
                 } else {
                     println!("Usage: include <word>");
                 }
             }
             Some("exclude") => {
                 if let Some(word) = argument {
-                    commands::exclude(&mut word_vec, word);
+                    exclude_chars = Some(word.to_owned());
+                    //commands::exclude(&mut word_vec, word);
                 } else {
                     println!("Usage: exclude <word>");
                 }

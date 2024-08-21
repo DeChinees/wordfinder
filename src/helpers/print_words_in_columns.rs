@@ -1,5 +1,4 @@
-use std::io;
-
+// src/helpers/print_words_in_columns.rs
 pub fn print_words_in_columns(word_vec: &Vec<String>, argument: &str, column_size: usize) {
     if argument == "all" || (word_vec.len() <= 10 && argument.is_empty()) {
         print_words(word_vec, column_size);
