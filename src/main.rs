@@ -1,161 +1,144 @@
-use std::fs::File;
-use std::io::{BufRead, BufReader, Error};
-use core::str;
-//use std::vec;
-use clap::{App, Arg};
+// src/main.rs
+mod commands; // Reference the module in the commands directory
+mod helpers;
 
-mod tests;
-
-fn check_input(pattern: &str, variable_chars: &str) -> bool {
-    variable_chars.len() > pattern.len()
-}
-
-// fn is_valid_word(word: &str, exlude_chars: $str) -> bool {
-fn is_valid_word(word: &str) -> bool {
-    // Check if the word contains any numeric digits, '-', or '_'
-    !word.chars().any(|c| c.is_digit(10) || c == '-' || c == '_' || c == '\'')
-}
-
-fn print_words_in_columns(words: Vec<String>, column_size: usize) {
-    for (i, word) in words.iter().enumerate() {
-        if i > 0 && i % column_size == 0 {
-            println!(); // Move to the next line after `column_size` words
-        }
-        print!("{:<10}", word); // Print each word with some padding for better alignment
-    }
-    println!(); // Ensure the final line ends properly
-    if words.len() > 10 {
-        println!("To many words");
-    }
-}
-
-fn read_wordlist(pattern_length: usize, file_path: &str, word_vec: &mut Vec<String>) -> Result<(), Error> {
-    // Attempt to open the file
-    let file = File::open(file_path)?;
-
-    // Wrap the file handle in a BufReader
-    let reader = BufReader::new(file);
-
-    // Read each line from the file
-    for line in reader.lines() {
-        let word = line?;
-        // Check if the length of the word matches pattern_length
-        // and if the word contains no digits, '-' or '_'
-        if word.len() == pattern_length && is_valid_word(&word) {
-            word_vec.push(word.to_lowercase());
-        }
-    }
-    Ok(())
-}
-
-fn findword(pattern: &str, variable_chars: &str, chars_not_exists: &str, wordlist: &mut Vec<String>) -> Vec<String> {
-    if pattern.contains('*') {
-        // Step 1: Filter words based on the pattern
-        let matched_words: Vec<String> = wordlist.iter()
-            .filter(|word| {
-                word.chars().zip(pattern.chars()).all(|(w_char, p_char)| p_char == '*' || w_char == p_char)
-            })
-            .cloned()
-            .collect();
-
-        // Step 2: Remove words that contain chars in chars_not_exists
-        let excl_chars_not_exists: Vec<String> = if !chars_not_exists.is_empty() {
-            matched_words.clone().into_iter()
-                .filter(|word| {
-                    !chars_not_exists.chars().any(|c_char| word.contains(c_char))
-                })
-                .collect()
-        } else {
-            matched_words.clone()
-        };
-
-        // Step 3: Further filter matched words to check for presence of variable_chars
-        let filterd_words: Vec<String> = if !variable_chars.is_empty() {
-            excl_chars_not_exists.clone().into_iter()
-               .filter(|word| {
-                    variable_chars.chars().any(|v_char| word.contains(v_char))
-                })
-            .collect()
-        } else {
-            matched_words
-        };
-
-        // return list of possible words    
-        filterd_words
-    } else {
-        wordlist.iter()
-            .filter(|word| {
-                word.contains(pattern) &&
-                variable_chars.chars().any(|v_char| word.contains(v_char)) &&
-                !chars_not_exists.chars().any(|c_char| word.contains(c_char))
-            })
-            .cloned()
-            .collect()
-    }
-}
+use std::io::{self, Write};
 
 fn main() {
-    //let input = "audio";
-    //let target_substring = "uniek";
-    let file_path = "wordlist.txt";
-    let mut word_vec: Vec<String> = Vec::new();
-    // let mut word_vec = vec![
-    //     String::from("raden"),
-    //     String::from("kruid"),
-    //     String::from("pruik"),
-    //     String::from("pruim"),
-    //     String::from("audio")
-    // ];
+    let mut word_vec: Vec<String> = Vec::new(); // Initialize an empty Vec<String>
+    let mut include_chars: Option<String> = None;
+    let mut exclude_chars: Option<String> = None;
+    let mut word_length: usize = 0;
+    commands::init_dictionary(&mut word_vec);
 
-    // Define CLI options using clap
-    let matches = App::new("WordFinder")
-        .version("0.1.alpha")
-        .about("Search for words in a wordlist")
-        .arg(
-            Arg::with_name("letter_in_correct_place")
-                .help("Provide letters in the correct place\nUse '*' if you do not know the letter.")
-                .required(true),
-        )
-        .arg(
-            Arg::with_name("letter_not_in_correct_place")
-                .short('x')
-                .long("letter-x")
-                .value_name("LETTER_X")
-                .help("Provide letter not in the correct place")
-                .takes_value(true),
-        )
-        .arg(
-            Arg::with_name("letter_not_in_word")
-                .short('y')
-                .long("letter-y")
-                .value_name("LETTER_Y")
-                .help("Provide letterss do not exist in the word")
-                .takes_value(true),
-        )
-        .get_matches();
+    loop {
+        print!("Enter command: ");
+        io::stdout().flush().unwrap(); // Flush the output to display prompt
 
-    // Extract the values of named arguments
-    let pattern = matches.value_of("letter_in_correct_place").unwrap_or_default();
-    let variable_chars = matches.value_of("letter_not_in_correct_place").unwrap_or_default();
-    let chars_not_exists: &str = matches.value_of("letter_not_in_word").unwrap_or_default();
-    
-    // input_varable cannot contain more letters than input.
-    if check_input(pattern, variable_chars) {
-        println!("To many characters provided for the option x.");
-        println!("You have provided letters {}, should not be longer than {}", variable_chars, pattern.len());
-        // Exit the program here
-        return;
-    } 
+        let mut input = String::new();
+        io::stdin().read_line(&mut input).unwrap();
+        let input = input.trim();
 
-    // Call the function to read the wordlist
-    if let Err(e) = read_wordlist(pattern.len(), file_path, &mut word_vec) {
-        eprintln!("Error reading file {}: {}", file_path, e);
+        // Parse command and argument
+        let mut parts = input.split_whitespace();
+        let command = parts.next();
+        let argument = parts.next();
+
+        match command {
+            Some("help") => {
+                commands::help();
+            }
+            Some("find") => {
+                if let Some(word) = argument {
+                    if word_length == 0 {
+                        // This is the first time we do a search.
+                        // We filter out only words that not equal in length to word_len().
+                        word_length = word.len();
+                        commands::set_dictionary(word.len(), &mut word_vec)
+                    }
+
+                    // Check word_length
+                    if let Err(error) = helpers::check_word_length(word_length, word.len()) {
+                        commands::help_word_length(word, &include_chars, &exclude_chars);
+                        return; // Exit the clause early
+                    }
+
+                    // Capture the result of the `find` function
+                    let filtered_words = commands::find(word, include_chars.clone(), exclude_chars.clone(), &mut word_vec);
+
+                    // Print or use the filtered words
+                    if filtered_words.is_empty() {
+                        println!("No words found matching the criteria.");
+                    } else {
+                        println!("Found words: {:?}", filtered_words);
+                    }
+                } else {
+                    println!("Usage: find <word>");
+                }
+            }
+            Some("include") => {
+                if let Some(word) = argument {
+                    // Check if the argument is "help"
+                    if word == "help" {
+                        println!("Usage: include <word>");
+                        println!("  <word> - the characters to include in the search");
+                        println!("If no argument is given, prints the current value of include_chars.");
+                    } else {
+                        // Add new characters to include_chars
+                        if let Some(ref mut existing_chars) = include_chars {
+                            // Append the new characters to the existing ones
+                            existing_chars.push_str(&word);
+                        } else {
+                            // Initialize include_chars with the new characters
+                            include_chars = Some(word.to_owned());
+                        }
+                        println!("Updated include_chars to: {}", include_chars.as_ref().unwrap());
+                    }
+                } else {
+                    // No argument provided, print the current value of include_chars
+                    match &include_chars {
+                        Some(chars) => println!("Current include_chars: {}", chars),
+                        None => println!("No include_chars set."),
+                    }
+                }
+            }
+            Some("exclude") => {
+                if let Some(word) = argument {
+                    // Check if the argument is "help"
+                    if word == "help" {
+                        println!("Usage: exclude <word>");
+                        println!("  <word> - the characters to include in the search");
+                        println!("If no argument is given, prints the current value of include_chars.");
+                    } else {
+                        // Add new characters to include_chars
+                        if let Some(ref mut existing_chars) = exclude_chars {
+                            // Append the new characters to the existing ones
+                            existing_chars.push_str(&word);
+                        } else {
+                            // Initialize include_chars with the new characters
+                            exclude_chars = Some(word.to_owned());
+                        }
+                        println!("Updated exclude_chars to: {}", exclude_chars.as_ref().unwrap());
+                    }
+                } else {
+                    // No argument provided, print the current value of exclude_chars
+                    match &exclude_chars {
+                        Some(chars) => println!("Current exclude_chars: {}", chars),
+                        None => println!("No exclude_chars set."),
+                    }
+                }
+            }
+            Some("list") => {
+                if let Some(arg) = argument {
+                    helpers::print_words_in_columns(&mut word_vec, arg, 6)
+                } else {
+                    helpers::print_words_in_columns(&mut word_vec, "", 6)
+                }
+            }
+            Some("reset") => {
+                if let Some(word) = argument {
+                    // Check if the argument is "help"
+                    if word == "include" {
+                        include_chars = None;
+                        println!("Reset include_chars to None");
+                    }
+                    if word == "exclude" {
+                        exclude_chars = None;
+                        println!("Reset exclude_chars to None");
+                    }
+                } else {
+                    commands::init_dictionary(&mut word_vec);
+                    include_chars = None;
+                    exclude_chars = None;
+                }
+            }
+            Some("exit") => {
+                println!("Exiting program...");
+                break;
+            }
+            _ => {
+                println!("Unknown command. Type 'help' to see the list of available commands.");
+            }
+        }
     }
-
-    //println!("Searching for '{pattern}' out of {} possible words.", word_vec.len());
-    
-    let matching_words = findword(pattern, variable_chars, chars_not_exists, &mut word_vec);
-    print_words_in_columns(matching_words, 5);
-    //println!("{:?}", matching_words);
-
 }
