@@ -141,7 +141,7 @@ fn main() {
     let chars_not_exists: &str = matches.value_of("letter_not_in_word").unwrap_or_default();
     
     // input_varable cannot contain more letters than input.
-    if check_input(pattern, variable_chars) {
+    if (pattern, variable_chars) {
         println!("To many characters provided for the option x.");
         println!("You have provided letters {}, should not be longer than {}", variable_chars, pattern.len());
         // Exit the program here

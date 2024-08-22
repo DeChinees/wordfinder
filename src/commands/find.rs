@@ -1,6 +1,3 @@
-use crate::helpers;
-// src/commands/find.rs
-use crate::helpers::check_input;
 
 pub fn find(pattern: &str,
             include_chars: Option<String>,

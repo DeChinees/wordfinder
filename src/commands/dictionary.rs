@@ -1,15 +1,30 @@
-// src/commands/reset_words.rs
-
 use std::fs::File;
 use std::io::{self, BufRead};
 use std::path::Path;
+
+pub fn init_dictionary(word_vec: &mut Vec<String>) {
+    match init(word_vec) {
+        Ok(()) => {
+            println!("Dictionary initialized successfully.");
+        }
+        Err(e) => {
+            eprintln!("Failed to initialize dictionary: {}", e);
+            // Handle the error, e.g., by exiting the function early
+        }
+    }
+}
+
+pub fn set_dictionary(word_length: usize, word_vec: &mut Vec<String>) {
+    // Retain only the words that match the specified word_length
+    word_vec.retain(|word| word.len() == word_length);
+}
 
 fn is_valid_word(word: &str) -> bool {
     // Check if the word contains any numeric digits, '-', or '_'
     !word.chars().any(|c| c.is_digit(10) || c == '-' || c == '_' || c == '\'')
 }
 
-pub fn reset_words(word_vec: &mut Vec<String>) -> io::Result<()> {
+fn init(word_vec: &mut Vec<String>) -> io::Result<()> {
     // Clear the current contents of word_vec
     word_vec.clear();
 
