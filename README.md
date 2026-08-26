@@ -25,7 +25,7 @@ Adds characters to the `exclude_chars` set. Prints the current value if no argum
 
 ### `list [pattern]`
 
-Lists words from the dictionary in columns. Optionally filter words by `pattern`.
+Lists words from the dictionary in columns.
 
 ### `reset [include|exclude]`
 

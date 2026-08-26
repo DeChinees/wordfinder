@@ -50,7 +50,8 @@ fn main() {
                     if filtered_words.is_empty() {
                         println!("No words found matching the criteria.");
                     } else {
-                        println!("Found words: {:?}", filtered_words);
+                        //println!("Found words: {:?}", filtered_words);
+                        helpers::print_words_in_columns(&filtered_words, "all",8);
                     }
                 } else {
                     println!("Usage: find <word>");
