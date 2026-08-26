@@ -38,7 +38,7 @@ fn main() {
                     }
 
                     // Check word_length
-                    if let Err(error) = helpers::check_word_length(word_length, word.len()) {
+                    if let Err(_error) = helpers::check_word_length(word_length, word.len()) {
                         commands::help_word_length(word, &include_chars, &exclude_chars);
                         return; // Exit the clause early
                     }

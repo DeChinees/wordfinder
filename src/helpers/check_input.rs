@@ -4,6 +4,7 @@ pub fn check_word_length(word_length: usize, word_len: usize) -> Result<(), Stri
     }
     Ok(())
 }
+#[allow(dead_code)]
 pub fn check_chars_length(chars: &Option<String>, word_len: usize) -> Result<(), String> {
     if let Some(ref chars_str) = chars {
         if chars_str.len() != word_len {
