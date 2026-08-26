@@ -1,4 +1,5 @@
 // src/commands/include.rs
+#[allow(dead_code)]
 pub fn include(word_vec: &mut Vec<String>, word: &str) {
     if !word_vec.contains(&word.to_string()) {
         word_vec.push(word.to_string());

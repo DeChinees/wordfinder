@@ -38,7 +38,7 @@ fn main() {
                     }
 
                     // Check word_length
-                    if let Err(error) = helpers::check_word_length(word_length, word.len()) {
+                    if let Err(_error) = helpers::check_word_length(word_length, word.len()) {
                         commands::help_word_length(word, &include_chars, &exclude_chars);
                         return; // Exit the clause early
                     }
@@ -50,7 +50,8 @@ fn main() {
                     if filtered_words.is_empty() {
                         println!("No words found matching the criteria.");
                     } else {
-                        println!("Found words: {:?}", filtered_words);
+                        //println!("Found words: {:?}", filtered_words);
+                        helpers::print_words_in_columns(&filtered_words, "all",8);
                     }
                 } else {
                     println!("Usage: find <word>");

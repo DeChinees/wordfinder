@@ -29,7 +29,7 @@ fn init(word_vec: &mut Vec<String>) -> io::Result<()> {
     word_vec.clear();
 
     // Define the path to the wordlist file
-    let path = Path::new("src/dictionary/wordlist.txt");
+    let path = Path::new("wordlist.txt");
 
     // Open the file in read-only mode
     let file = File::open(&path)?;
